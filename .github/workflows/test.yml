@@ -22,9 +22,10 @@ jobs:
 
       - name: Tap local repository
         run: |
-          # Create tap from local checkout
-          mkdir -p $(brew --prefix)/Library/Taps/shivasurya
-          ln -s $GITHUB_WORKSPACE $(brew --prefix)/Library/Taps/shivasurya/homebrew-tap
+          # Create tap from local checkout using brew --repository for correct path
+          BREW_REPO=$(brew --repository)
+          mkdir -p "${BREW_REPO}/Library/Taps/shivasurya"
+          ln -s $GITHUB_WORKSPACE "${BREW_REPO}/Library/Taps/shivasurya/homebrew-tap"
 
       - name: Install formula
         run: |
@@ -47,9 +48,10 @@ jobs:
 
       - name: Tap local repository
         run: |
-          # Create tap from local checkout
-          mkdir -p $(brew --prefix)/Library/Taps/shivasurya
-          ln -s $GITHUB_WORKSPACE $(brew --prefix)/Library/Taps/shivasurya/homebrew-tap
+          # Create tap from local checkout using brew --repository for correct path
+          BREW_REPO=$(brew --repository)
+          mkdir -p "${BREW_REPO}/Library/Taps/shivasurya"
+          ln -s $GITHUB_WORKSPACE "${BREW_REPO}/Library/Taps/shivasurya/homebrew-tap"
 
       - name: Install formula
         run: |
@@ -79,9 +81,10 @@ jobs:
       - name: Tap local repository
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          # Create tap from local checkout
-          mkdir -p $(brew --prefix)/Library/Taps/shivasurya
-          ln -s $GITHUB_WORKSPACE $(brew --prefix)/Library/Taps/shivasurya/homebrew-tap
+          # Create tap from local checkout using brew --repository for correct path
+          BREW_REPO=$(brew --repository)
+          mkdir -p "${BREW_REPO}/Library/Taps/shivasurya"
+          ln -s $GITHUB_WORKSPACE "${BREW_REPO}/Library/Taps/shivasurya/homebrew-tap"
 
       - name: Install formula
         run: |
