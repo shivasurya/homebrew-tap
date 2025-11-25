@@ -5,10 +5,13 @@ on:
     branches: [main]
     paths:
       - 'Formula/**'
+      - '.github/workflows/test.yml'
   pull_request:
     branches: [main]
     paths:
       - 'Formula/**'
+      - '.github/workflows/test.yml'
+  workflow_dispatch:
 
 jobs:
   test-macos-arm64:
