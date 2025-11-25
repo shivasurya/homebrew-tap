@@ -1,0 +1,159 @@
+name: Update Formula
+
+on:
+  # Triggered by code-pathfinder release
+  repository_dispatch:
+    types: [new-release]
+
+  # Manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to update to (e.g., 0.0.34) - WITHOUT v prefix'
+        required: true
+        type: string
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout tap repository
+        uses: actions/checkout@v4
+
+      - name: Get version (strip v prefix if present)
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
+            # Strip 'v' prefix from tag (e.g., v0.0.34 -> 0.0.34)
+            RAW_VERSION="${{ github.event.client_payload.version }}"
+            VERSION="${RAW_VERSION#v}"
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
+            echo "Processing version: ${VERSION} (from tag: ${RAW_VERSION})"
+          else
+            VERSION="${{ github.event.inputs.version }}"
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
+            echo "Processing version: ${VERSION} (manual trigger)"
+          fi
+
+      - name: Wait for release assets
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          BASE_URL="https://github.com/shivasurya/code-pathfinder/releases/download/v${VERSION}"
+
+          echo "Waiting for release assets to be available..."
+          for i in {1..30}; do
+            if curl -sL -o /dev/null -w "%{http_code}" "${BASE_URL}/pathfinder-darwin-arm64.tar.gz" | grep -q "200"; then
+              echo "Assets available!"
+              break
+            fi
+            echo "Attempt $i: Assets not ready, waiting 10s..."
+            sleep 10
+          done
+
+      - name: Download release assets and calculate SHA256
+        id: sha256
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          BASE_URL="https://github.com/shivasurya/code-pathfinder/releases/download/v${VERSION}"
+
+          echo "Downloading and hashing release assets..."
+
+          # Download and hash each platform
+          for platform in darwin-arm64 darwin-amd64 linux-amd64 linux-arm64; do
+            ASSET="pathfinder-${platform}.tar.gz"
+            echo "Downloading ${ASSET}..."
+            curl -sL "${BASE_URL}/${ASSET}" -o "${ASSET}"
+
+            if [ ! -s "${ASSET}" ]; then
+              echo "ERROR: Failed to download ${ASSET}"
+              exit 1
+            fi
+
+            HASH=$(sha256sum "${ASSET}" | cut -d' ' -f1)
+            VARNAME=$(echo "${platform}" | tr '-' '_')
+            echo "${VARNAME}=${HASH}" >> $GITHUB_OUTPUT
+            echo "${platform}: ${HASH}"
+            rm "${ASSET}"
+          done
+
+          # Get PyPI package SHA256 (latest version)
+          echo "Getting PyPI package hash..."
+          PYPI_JSON=$(curl -s https://pypi.org/pypi/codepathfinder/json)
+          PYPI_URL=$(echo "${PYPI_JSON}" | jq -r '.urls[] | select(.packagetype=="sdist") | .url')
+          PYPI_VERSION=$(echo "${PYPI_JSON}" | jq -r '.info.version')
+
+          if [ -z "${PYPI_URL}" ]; then
+            echo "ERROR: Could not find PyPI sdist URL"
+            exit 1
+          fi
+
+          curl -sL "${PYPI_URL}" -o codepathfinder.tar.gz
+          PYPI_HASH=$(sha256sum codepathfinder.tar.gz | cut -d' ' -f1)
+          echo "pypi=${PYPI_HASH}" >> $GITHUB_OUTPUT
+          echo "pypi_version=${PYPI_VERSION}" >> $GITHUB_OUTPUT
+          echo "pypi (${PYPI_VERSION}): ${PYPI_HASH}"
+          rm codepathfinder.tar.gz
+
+      - name: Update formula
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          FORMULA="Formula/pathfinder.rb"
+
+          echo "Updating formula to version ${VERSION}..."
+
+          # Update version
+          sed -i "s/version \"[^\"]*\"/version \"${VERSION}\"/" "${FORMULA}"
+
+          # Update SHA256 hashes using the comment markers
+          sed -i "s/sha256 \"[^\"]*\" # darwin-arm64/sha256 \"${{ steps.sha256.outputs.darwin_arm64 }}\" # darwin-arm64/" "${FORMULA}"
+          sed -i "s/sha256 \"[^\"]*\" # darwin-amd64/sha256 \"${{ steps.sha256.outputs.darwin_amd64 }}\" # darwin-amd64/" "${FORMULA}"
+          sed -i "s/sha256 \"[^\"]*\" # linux-amd64/sha256 \"${{ steps.sha256.outputs.linux_amd64 }}\" # linux-amd64/" "${FORMULA}"
+          sed -i "s/sha256 \"[^\"]*\" # linux-arm64/sha256 \"${{ steps.sha256.outputs.linux_arm64 }}\" # linux-arm64/" "${FORMULA}"
+          sed -i "s/sha256 \"[^\"]*\" # pypi/sha256 \"${{ steps.sha256.outputs.pypi }}\" # pypi/" "${FORMULA}"
+
+          echo "Formula updated:"
+          grep -E "version|sha256" "${FORMULA}"
+
+      - name: Validate formula syntax
+        run: |
+          # Basic Ruby syntax check
+          ruby -c Formula/pathfinder.rb
+          echo "Formula syntax is valid"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update pathfinder to ${{ steps.version.outputs.version }}"
+          title: "Update pathfinder to ${{ steps.version.outputs.version }}"
+          body: |
+            Automated formula update for pathfinder ${{ steps.version.outputs.version }}
+
+            ## Release
+            - Version: `${{ steps.version.outputs.version }}`
+            - Release URL: https://github.com/shivasurya/code-pathfinder/releases/tag/v${{ steps.version.outputs.version }}
+
+            ## SHA256 Checksums
+            | Platform | SHA256 |
+            |----------|--------|
+            | darwin-arm64 | `${{ steps.sha256.outputs.darwin_arm64 }}` |
+            | darwin-amd64 | `${{ steps.sha256.outputs.darwin_amd64 }}` |
+            | linux-amd64 | `${{ steps.sha256.outputs.linux_amd64 }}` |
+            | linux-arm64 | `${{ steps.sha256.outputs.linux_arm64 }}` |
+            | PyPI (${{ steps.sha256.outputs.pypi_version }}) | `${{ steps.sha256.outputs.pypi }}` |
+
+            ## Verification
+            After merging, users can update with:
+            ```bash
+            brew update
+            brew upgrade pathfinder
+            ```
+
+            ---
+            Automated by [update-formula.yml](https://github.com/shivasurya/homebrew-tap/blob/main/.github/workflows/update-formula.yml)
+          branch: update-pathfinder-${{ steps.version.outputs.version }}
+          delete-branch: true
