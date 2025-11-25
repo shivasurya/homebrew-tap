@@ -17,9 +17,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Tap local repository
+        run: |
+          # Create tap from local checkout
+          mkdir -p $(brew --prefix)/Library/Taps/shivasurya
+          ln -s $GITHUB_WORKSPACE $(brew --prefix)/Library/Taps/shivasurya/homebrew-tap
+
       - name: Install formula
         run: |
-          brew install --verbose Formula/pathfinder.rb
+          brew install --verbose shivasurya/tap/pathfinder
 
       - name: Test binary
         run: |
@@ -36,14 +42,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Tap local repository
+        run: |
+          # Create tap from local checkout
+          mkdir -p $(brew --prefix)/Library/Taps/shivasurya
+          ln -s $GITHUB_WORKSPACE $(brew --prefix)/Library/Taps/shivasurya/homebrew-tap
+
       - name: Install formula
         run: |
-          brew install --verbose Formula/pathfinder.rb
+          brew install --verbose shivasurya/tap/pathfinder
 
       - name: Test binary
         run: |
           pathfinder version
           pathfinder --help
+
+      - name: Test Python DSL
+        run: |
+          $(brew --prefix)/Cellar/pathfinder/*/libexec/venv/bin/python -c "import codepathfinder; print(codepathfinder.__version__)"
 
   test-linux:
     runs-on: ubuntu-latest
@@ -57,13 +73,25 @@ jobs:
           echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
+      - name: Tap local repository
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          # Create tap from local checkout
+          mkdir -p $(brew --prefix)/Library/Taps/shivasurya
+          ln -s $GITHUB_WORKSPACE $(brew --prefix)/Library/Taps/shivasurya/homebrew-tap
+
       - name: Install formula
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          brew install --verbose Formula/pathfinder.rb
+          brew install --verbose shivasurya/tap/pathfinder
 
       - name: Test binary
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           pathfinder version
           pathfinder --help
+
+      - name: Test Python DSL
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          $(brew --prefix)/Cellar/pathfinder/*/libexec/venv/bin/python -c "import codepathfinder; print(codepathfinder.__version__)"
