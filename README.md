@@ -8,8 +8,11 @@ This is the official [Homebrew](https://brew.sh/) tap for [Code Pathfinder](http
 # Add the tap
 brew tap shivasurya/tap
 
-# Install pathfinder
+# Install latest version
 brew install pathfinder
+
+# Or install a specific version
+brew install pathfinder@0.0.34
 ```
 
 ## Usage
@@ -30,6 +33,29 @@ pathfinder --help
 ```bash
 brew update
 brew upgrade pathfinder
+```
+
+## Version Pinning
+
+Install a specific version to pin your installation:
+
+```bash
+# Install specific version
+brew install shivasurya/tap/pathfinder@0.0.34
+
+# Switch between versions
+brew unlink pathfinder
+brew link pathfinder@0.0.34 --force
+
+# Or run a specific version directly
+$(brew --prefix)/opt/pathfinder@0.0.34/bin/pathfinder version
+```
+
+## Available Versions
+
+```bash
+# List all available versions
+brew search shivasurya/tap/pathfinder
 ```
 
 ## Troubleshooting
