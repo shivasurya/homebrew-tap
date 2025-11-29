@@ -28,16 +28,18 @@ jobs:
         id: version
         run: |
           if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
-            # Strip 'v' prefix from tag (e.g., v0.0.34 -> 0.0.34)
             RAW_VERSION="${{ github.event.client_payload.version }}"
             VERSION="${RAW_VERSION#v}"
-            echo "version=${VERSION}" >> $GITHUB_OUTPUT
-            echo "Processing version: ${VERSION} (from tag: ${RAW_VERSION})"
           else
             VERSION="${{ github.event.inputs.version }}"
-            echo "version=${VERSION}" >> $GITHUB_OUTPUT
-            echo "Processing version: ${VERSION} (manual trigger)"
           fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+          # Convert 0.0.34 to 0034 for Ruby class name (remove dots)
+          CLASS_SUFFIX=$(echo "${VERSION}" | tr -d '.')
+          echo "class_suffix=${CLASS_SUFFIX}" >> $GITHUB_OUTPUT
+
+          echo "Processing version: ${VERSION} (class suffix: ${CLASS_SUFFIX})"
 
       - name: Get python-dsl version from code-pathfinder repo
         id: python_dsl_version
@@ -117,24 +119,24 @@ jobs:
           curl -sL "${PYPI_URL}" -o codepathfinder.tar.gz
           PYPI_HASH=$(sha256sum codepathfinder.tar.gz | cut -d' ' -f1)
           echo "pypi=${PYPI_HASH}" >> $GITHUB_OUTPUT
+          echo "pypi_url=${PYPI_URL}" >> $GITHUB_OUTPUT
           echo "pypi_version=${PYPI_VERSION}" >> $GITHUB_OUTPUT
           echo "pypi_url=${PYPI_URL}" >> $GITHUB_OUTPUT
           echo "pypi (${PYPI_VERSION}): ${PYPI_HASH}"
           echo "pypi URL: ${PYPI_URL}"
           rm codepathfinder.tar.gz
 
-      - name: Update formula
+      - name: Update main formula (pathfinder.rb)
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           PYPI_VERSION="${{ steps.sha256.outputs.pypi_version }}"
           PYPI_URL="${{ steps.sha256.outputs.pypi_url }}"
           FORMULA="Formula/pathfinder.rb"
 
-          echo "Updating formula to version ${VERSION}..."
+          echo "Updating main formula to version ${VERSION}..."
           echo "Python DSL version: ${PYPI_VERSION}"
           echo "PyPI URL: ${PYPI_URL}"
 
-          # Update version
           sed -i "s/version \"[^\"]*\"/version \"${VERSION}\"/" "${FORMULA}"
 
           # Update PyPI resource URL
@@ -147,14 +149,97 @@ jobs:
           sed -i "s/sha256 \"[^\"]*\" # linux-arm64/sha256 \"${{ steps.sha256.outputs.linux_arm64 }}\" # linux-arm64/" "${FORMULA}"
           sed -i "s/sha256 \"[^\"]*\" # pypi/sha256 \"${{ steps.sha256.outputs.pypi }}\" # pypi/" "${FORMULA}"
 
-          echo "Formula updated:"
-          grep -E "version|sha256|url.*pythonhosted" "${FORMULA}"
+          echo "Main formula updated"
+
+      - name: Create versioned formula (pathfinder@X.Y.Z.rb)
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          CLASS_SUFFIX="${{ steps.version.outputs.class_suffix }}"
+          VERSIONED_FILE="Formula/pathfinder@${VERSION}.rb"
+
+          echo "Creating versioned formula: ${VERSIONED_FILE}"
+
+          cat > "${VERSIONED_FILE}" << EOF
+          class PathfinderAT${CLASS_SUFFIX} < Formula
+            include Language::Python::Virtualenv
+
+            desc "Open-source security suite with structural code analysis and AI-powered vulnerability detection"
+            homepage "https://codepathfinder.dev/"
+            license "AGPL-3.0-only"
+            version "${VERSION}"
+
+            on_macos do
+              on_arm do
+                url "https://github.com/shivasurya/code-pathfinder/releases/download/v${VERSION}/pathfinder-darwin-arm64.tar.gz"
+                sha256 "${{ steps.sha256.outputs.darwin_arm64 }}"
+              end
+              on_intel do
+                url "https://github.com/shivasurya/code-pathfinder/releases/download/v${VERSION}/pathfinder-darwin-amd64.tar.gz"
+                sha256 "${{ steps.sha256.outputs.darwin_amd64 }}"
+              end
+            end
+
+            on_linux do
+              on_arm do
+                url "https://github.com/shivasurya/code-pathfinder/releases/download/v${VERSION}/pathfinder-linux-arm64.tar.gz"
+                sha256 "${{ steps.sha256.outputs.linux_arm64 }}"
+              end
+              on_intel do
+                url "https://github.com/shivasurya/code-pathfinder/releases/download/v${VERSION}/pathfinder-linux-amd64.tar.gz"
+                sha256 "${{ steps.sha256.outputs.linux_amd64 }}"
+              end
+            end
+
+            depends_on "python@3.12"
+
+            resource "codepathfinder" do
+              url "${{ steps.sha256.outputs.pypi_url }}"
+              sha256 "${{ steps.sha256.outputs.pypi }}"
+            end
+
+            keg_only :versioned_formula
+
+            def install
+              libexec.install "pathfinder"
+              venv = virtualenv_create(libexec/"venv")
+              venv.pip_install resource("codepathfinder")
+              (bin/"pathfinder").write_env_script(
+                libexec/"pathfinder",
+                PATH: "#{venv.root}/bin:#{ENV["PATH"]}"
+              )
+            end
+
+            def caveats
+              <<~EOS
+                pathfinder@${VERSION} is keg-only (versioned formula).
+
+                To use this version, run:
+                  brew unlink pathfinder
+                  brew link pathfinder@${VERSION} --force
+
+                Or run directly:
+                  \$(brew --prefix)/opt/pathfinder@${VERSION}/bin/pathfinder
+              EOS
+            end
+
+            test do
+              assert_match "Version:", shell_output("#{bin}/pathfinder version")
+              system "#{libexec}/venv/bin/python", "-c", "import codepathfinder"
+            end
+          end
+          EOF
+
+          # Remove leading whitespace from heredoc
+          sed -i 's/^          //' "${VERSIONED_FILE}"
+
+          echo "Versioned formula created"
 
       - name: Validate formula syntax
         run: |
-          # Basic Ruby syntax check
+          VERSION="${{ steps.version.outputs.version }}"
           ruby -c Formula/pathfinder.rb
-          echo "Formula syntax is valid"
+          ruby -c "Formula/pathfinder@${VERSION}.rb"
+          echo "All formula syntax is valid"
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
@@ -169,6 +254,19 @@ jobs:
             - Version: `${{ steps.version.outputs.version }}`
             - Release URL: https://github.com/shivasurya/code-pathfinder/releases/tag/v${{ steps.version.outputs.version }}
 
+            ## Changes
+            - Updated `Formula/pathfinder.rb` (latest version)
+            - Created `Formula/pathfinder@${{ steps.version.outputs.version }}.rb` (versioned formula)
+
+            ## Installation
+            ```bash
+            # Install latest
+            brew install shivasurya/tap/pathfinder
+
+            # Install this specific version
+            brew install shivasurya/tap/pathfinder@${{ steps.version.outputs.version }}
+            ```
+
             ## SHA256 Checksums
             | Platform | SHA256 |
             |----------|--------|
@@ -178,14 +276,8 @@ jobs:
             | linux-arm64 | `${{ steps.sha256.outputs.linux_arm64 }}` |
             | PyPI (${{ steps.sha256.outputs.pypi_version }}) | `${{ steps.sha256.outputs.pypi }}` |
 
-            ## Verification
-            After merging, users can update with:
-            ```bash
-            brew update
-            brew upgrade pathfinder
-            ```
-
             ---
             Automated by [update-formula.yml](https://github.com/shivasurya/homebrew-tap/blob/main/.github/workflows/update-formula.yml)
           branch: update-pathfinder-${{ steps.version.outputs.version }}
           delete-branch: true
+          reviewers: shivasurya
