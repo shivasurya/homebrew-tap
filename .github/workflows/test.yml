@@ -41,7 +41,7 @@ jobs:
           $(brew --prefix)/Cellar/pathfinder/*/libexec/venv/bin/python -c "import codepathfinder; print(codepathfinder.__version__)"
 
   test-macos-intel:
-    runs-on: macos-13
+    runs-on: macos-15-intel
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -52,6 +52,17 @@ jobs:
           BREW_REPO=$(brew --repository)
           mkdir -p "${BREW_REPO}/Library/Taps/shivasurya"
           ln -s $GITHUB_WORKSPACE "${BREW_REPO}/Library/Taps/shivasurya/homebrew-tap"
+
+      - name: Fix Python symlink conflicts
+        run: |
+          # macos-15-intel runners have conflicting Python installations
+          # Remove system Python symlinks that conflict with Homebrew
+          sudo rm -f /usr/local/bin/2to3-3.12 \
+                     /usr/local/bin/idle3.12 \
+                     /usr/local/bin/pip3.12 \
+                     /usr/local/bin/pydoc3.12 \
+                     /usr/local/bin/python3.12 \
+                     /usr/local/bin/python3.12-config || true
 
       - name: Install formula
         run: |
