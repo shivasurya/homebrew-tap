@@ -41,7 +41,7 @@ jobs:
           $(brew --prefix)/Cellar/pathfinder/*/libexec/venv/bin/python -c "import codepathfinder; print(codepathfinder.__version__)"
 
   test-macos-intel:
-    runs-on: macos-13
+    runs-on: macos-15-intel
     steps:
       - name: Checkout
         uses: actions/checkout@v4
