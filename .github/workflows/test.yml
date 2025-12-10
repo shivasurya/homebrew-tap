@@ -53,6 +53,12 @@ jobs:
           mkdir -p "${BREW_REPO}/Library/Taps/shivasurya"
           ln -s $GITHUB_WORKSPACE "${BREW_REPO}/Library/Taps/shivasurya/homebrew-tap"
 
+      - name: Fix Python symlink conflicts
+        run: |
+          # macos-15-intel runners have conflicting Python installations
+          brew unlink python@3.12 2>/dev/null || true
+          brew link --overwrite python@3.12 || true
+
       - name: Install formula
         run: |
           brew install --verbose shivasurya/tap/pathfinder
