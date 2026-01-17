@@ -41,8 +41,8 @@ jobs:
 
           echo "Processing version: ${VERSION} (class suffix: ${CLASS_SUFFIX})"
 
-      - name: Get python-dsl version from code-pathfinder repo
-        id: python_dsl_version
+      - name: Get python-sdk version from code-pathfinder repo
+        id: python_sdk_version
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           echo "Cloning code-pathfinder repo at tag v${VERSION}..."
@@ -50,14 +50,14 @@ jobs:
           # Clone the specific version tag
           git clone --depth 1 --branch "v${VERSION}" https://github.com/shivasurya/code-pathfinder.git code-pathfinder-repo
 
-          # Check if python-dsl/pyproject.toml exists
-          if [ -f "code-pathfinder-repo/python-dsl/pyproject.toml" ]; then
+          # Check if python-sdk/pyproject.toml exists
+          if [ -f "code-pathfinder-repo/python-sdk/pyproject.toml" ]; then
             # Extract version from pyproject.toml
-            PYTHON_DSL_VERSION=$(grep -E "^version\s*=" code-pathfinder-repo/python-dsl/pyproject.toml | sed -E 's/version\s*=\s*"([^"]+)".*/\1/')
-            echo "Found python-dsl version: ${PYTHON_DSL_VERSION}"
-            echo "version=${PYTHON_DSL_VERSION}" >> $GITHUB_OUTPUT
+            PYTHON_SDK_VERSION=$(grep -E "^version\s*=" code-pathfinder-repo/python-sdk/pyproject.toml | sed -E 's/version\s*=\s*"([^"]+)".*/\1/')
+            echo "Found python-sdk version: ${PYTHON_SDK_VERSION}"
+            echo "version=${PYTHON_SDK_VERSION}" >> $GITHUB_OUTPUT
           else
-            echo "ERROR: python-dsl/pyproject.toml not found in repo"
+            echo "ERROR: python-sdk/pyproject.toml not found in repo"
             exit 1
           fi
 
@@ -105,8 +105,8 @@ jobs:
             rm "${ASSET}"
           done
 
-          # Get PyPI package SHA256 (specific version from python-dsl)
-          PYPI_VERSION="${{ steps.python_dsl_version.outputs.version }}"
+          # Get PyPI package SHA256 (specific version from python-sdk)
+          PYPI_VERSION="${{ steps.python_sdk_version.outputs.version }}"
           echo "Getting PyPI package hash for version ${PYPI_VERSION}..."
           PYPI_JSON=$(curl -s "https://pypi.org/pypi/codepathfinder/${PYPI_VERSION}/json")
           PYPI_URL=$(echo "${PYPI_JSON}" | jq -r '.urls[] | select(.packagetype=="sdist") | .url')
@@ -134,7 +134,7 @@ jobs:
           FORMULA="Formula/pathfinder.rb"
 
           echo "Updating main formula to version ${VERSION}..."
-          echo "Python DSL version: ${PYPI_VERSION}"
+          echo "Python SDK version: ${PYPI_VERSION}"
           echo "PyPI URL: ${PYPI_URL}"
 
           sed -i "s/version \"[^\"]*\"/version \"${VERSION}\"/" "${FORMULA}"
