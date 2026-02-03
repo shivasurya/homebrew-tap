@@ -4,7 +4,7 @@ class Pathfinder < Formula
   desc "Open-source security suite with structural code analysis and AI-powered vulnerability detection"
   homepage "https://codepathfinder.dev/"
   license "AGPL-3.0-only"
-  version "1.3.3"
+  version "1.3.4"
 
   # Platform-specific binary downloads
   # NOTE: Each tarball contains a file named "pathfinder"
@@ -12,22 +12,22 @@ class Pathfinder < Formula
   on_macos do
     on_arm do
       url "https://github.com/shivasurya/code-pathfinder/releases/download/v#{version}/pathfinder-darwin-arm64.tar.gz"
-      sha256 "02a9a9b31b2c715af9151aadced7289d02b56d55392f593edbbf4d13558bd236" # darwin-arm64
+      sha256 "11189559c22cb47b71a801b8c464d9de5fee0c813cfeab243c60a393dbe31b3c" # darwin-arm64
     end
     on_intel do
       url "https://github.com/shivasurya/code-pathfinder/releases/download/v#{version}/pathfinder-darwin-amd64.tar.gz"
-      sha256 "ede8bde4c30936631c189327db4e9e70e023e487d78cfc2a11127b372049e666" # darwin-amd64
+      sha256 "2fcec20817d4a899adea885991b174870af57f6a64e201ecac27242d2a1fb1db" # darwin-amd64
     end
   end
 
   on_linux do
     on_arm do
       url "https://github.com/shivasurya/code-pathfinder/releases/download/v#{version}/pathfinder-linux-arm64.tar.gz"
-      sha256 "65674e3b3026ae3288ee9a19ff0f39c8da13f21f5d581d6f99fc95211fd587ad" # linux-arm64
+      sha256 "6578017ac176f0c70a9d2b855a3e1aba59aecfbaa8783fc5ede37f57cd8171d1" # linux-arm64
     end
     on_intel do
       url "https://github.com/shivasurya/code-pathfinder/releases/download/v#{version}/pathfinder-linux-amd64.tar.gz"
-      sha256 "e1edcfe58f5b77fd418ce1f2a578c69cf43174ba57104e5114c68155db0223dd" # linux-amd64
+      sha256 "92986e21397222d5b2260ebaf38748f73af52e8f1f3f6e4d0685de47c9fdaa44" # linux-amd64
     end
   end
 
@@ -36,8 +36,8 @@ class Pathfinder < Formula
 
   # Python DSL package from PyPI
   resource "codepathfinder" do
-    url "https://files.pythonhosted.org/packages/4b/b6/6526cd2489b398433baf44e7ea200f2a018784737b000309efd84ce60559/codepathfinder-1.3.3.tar.gz"
-    sha256 "f8fe27dd4679f12cade4d8f0e13a65165d3829f3bb528c04147269e2bf94a599" # pypi
+    url "https://files.pythonhosted.org/packages/a3/08/918bae865a7429e0d94fc1279877c982a9a79d0c2d6485217a800ebd0e9b/codepathfinder-1.3.4.tar.gz"
+    sha256 "209b522f511b3af16f41bc6456e8253f8406f7bc2dc48216404333f3e0decb79" # pypi
   end
 
   def install
