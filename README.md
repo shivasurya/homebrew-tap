@@ -12,7 +12,7 @@ brew tap shivasurya/tap
 brew install pathfinder
 
 # Or install a specific version
-brew install pathfinder@1.1.0
+brew install pathfinder@1.3.6
 ```
 
 ## Usage
@@ -41,11 +41,11 @@ Install a specific version to pin your installation:
 
 ```bash
 # Install specific version
-brew install shivasurya/tap/pathfinder@1.1.0
+brew install shivasurya/tap/pathfinder@1.3.6
 
 # Switch between versions
 brew unlink pathfinder
-brew link pathfinder@1.1.0 --force
+brew link pathfinder@1.3.6 --force
 
 # Or run a specific version directly
 $(brew --prefix)/opt/pathfinder@0.0.34/bin/pathfinder version
