@@ -4,7 +4,7 @@ class Pathfinder < Formula
   desc "Open-source security suite with structural code analysis and AI-powered vulnerability detection"
   homepage "https://codepathfinder.dev/"
   license "AGPL-3.0-only"
-  version "2.0.0"
+  version "2.0.1"
 
   # Platform-specific binary downloads
   # NOTE: Each tarball contains a file named "pathfinder"
@@ -12,22 +12,22 @@ class Pathfinder < Formula
   on_macos do
     on_arm do
       url "https://github.com/shivasurya/code-pathfinder/releases/download/v#{version}/pathfinder-darwin-arm64.tar.gz"
-      sha256 "4f4e7b7270587d1167841fdbdb824c48ec0ec6a00c924ecd32ea2e633378cd43" # darwin-arm64
+      sha256 "eeb89f1704734e6606db9bdab56f093daf923b1ffc8f9af61330c2891ec2ed9a" # darwin-arm64
     end
     on_intel do
       url "https://github.com/shivasurya/code-pathfinder/releases/download/v#{version}/pathfinder-darwin-amd64.tar.gz"
-      sha256 "2ba1ee98c580463bcb86a157fa9cc4185d428fea9309045a873c960d9eef9e28" # darwin-amd64
+      sha256 "6e1724076ae110e304af24bcc59adebec041df82af3525a2540807c96e4492cd" # darwin-amd64
     end
   end
 
   on_linux do
     on_arm do
       url "https://github.com/shivasurya/code-pathfinder/releases/download/v#{version}/pathfinder-linux-arm64.tar.gz"
-      sha256 "bda4b7bfe21544713352b52527c36deceb57ea5447713ea5002535dd41b6e967" # linux-arm64
+      sha256 "b7dcd9b4ed8867b9bb4bd6105e3ad9b97b56480b9157ef3c53dadfa3f1e180d6" # linux-arm64
     end
     on_intel do
       url "https://github.com/shivasurya/code-pathfinder/releases/download/v#{version}/pathfinder-linux-amd64.tar.gz"
-      sha256 "5916f2a666ae45008d1324f427a716799172982eb6239952bcc0a8c0db62a0c5" # linux-amd64
+      sha256 "c9aacd877d7353c6e4806be1838d534bbdad10bd501cbe1a1a48209320e453e1" # linux-amd64
     end
   end
 
