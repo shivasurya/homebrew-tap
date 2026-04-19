@@ -1,6 +1,8 @@
 # Homebrew Tap for Code Pathfinder
 
-This is the official [Homebrew](https://brew.sh/) tap for [Code Pathfinder](https://github.com/shivasurya/code-pathfinder), an open-source security suite with structural code analysis and AI-powered vulnerability detection.
+This is the official [Homebrew](https://brew.sh/) tap for [Code Pathfinder](https://codepathfinder.dev/), an open-source security suite with structural code analysis and AI-powered vulnerability detection.
+
+Learn more at [codepathfinder.dev](https://codepathfinder.dev/).
 
 ## Installation
 
@@ -12,7 +14,7 @@ brew tap shivasurya/tap
 brew install pathfinder
 
 # Or install a specific version
-brew install pathfinder@1.3.6
+brew install pathfinder@2.1.0
 ```
 
 ## Usage
@@ -41,14 +43,14 @@ Install a specific version to pin your installation:
 
 ```bash
 # Install specific version
-brew install shivasurya/tap/pathfinder@1.3.6
+brew install shivasurya/tap/pathfinder@2.1.0
 
 # Switch between versions
 brew unlink pathfinder
-brew link pathfinder@1.3.6 --force
+brew link pathfinder@2.1.0 --force
 
 # Or run a specific version directly
-$(brew --prefix)/opt/pathfinder@0.0.34/bin/pathfinder version
+$(brew --prefix)/opt/pathfinder@2.1.0/bin/pathfinder version
 ```
 
 ## Available Versions
@@ -77,9 +79,10 @@ brew reinstall pathfinder
 
 ## Documentation
 
+- [Code Pathfinder Website](https://codepathfinder.dev/)
 - [Code Pathfinder Documentation](https://codepathfinder.dev/)
 - [GitHub Repository](https://github.com/shivasurya/code-pathfinder)
 
 ## License
 
-AGPL-3.0
+Apache-2.0 — see [LICENSE](LICENSE).
